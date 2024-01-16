@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hololens 2 Stream</title>
+    <style>
+        .box{
+            display: flex;
+            align-items: center;
+        }
+        .cusButton{
+            width: 110px;
+            height: 45px;
+            padding: 10px;
+            font-size: 16px;
+            position: relative;
+            margin-top: 5px;
+            margin-left: 32px;
+            margin-bottom: 5px;
+        }
+        .cusButton.clicked::after {
+            background-color: lime;
+        }
+        .cusButton::after {
+            content: '';
+            position: absolute;
+            top: 22%;
+            right: 115px;
+            width: 23px;
+            height: 23px;
+            border-radius: 50%;
+            background-color: red;
+            transition: background-color 0.3s;
+            box-shadow: 0 0 0 3px black;
+        }
+        .img-img{
+            width: 910px;
+            height: 512px;
+            user-select: none;
+        }
+        .img-box{
+            width: 910px;
+            height: 512px;
+            margin-right: 10px;
+            border: 2px solid #ccc;
+            user-select: none;
+        }
+        .btn-box{
+            display: flex;
+            margin-top: auto;
+            flex-direction: column;
+            border: 2px solid #ccc;
+            padding: 5px; 
+            align-items: center;
+            box-sizing: border-box; 
+        }
+        .init-box{
+            display: flex;
+            margin-top: auto;
+            border: 2px solid #ccc;
+            padding: 5px; 
+            box-sizing: border-box; 
+        }
+    </style>
+</head>
+<body>
+    <div class = "box">
+        <div class="img-box" id="imgBox">
+            <img class="img-img" id="imgImage" src="" draggable="false">
+        </div>
+        
+        <div class="btn-box" >
+            <button class="cusButton" onclick="btn_fcn1(this)">Streaming</button>
+            <button class="cusButton" onclick="btn_fcn2(this)">Drawing</button>
+            <button class="cusButton" onclick="btn_fcn3(this)">Microphone</button>
+        </div>
+    </div>
+</body>
+<script language="javascript">
+    var isDraw = false;
+    var frameInterval, pointInterval;
+    var mouseX = 0, mouseY = 0;
+    const imgBox = document.getElementById('imgBox');
+    const imgImage = document.getElementById("imgImage");
+    const SCREEN_WIDTH = 910, SCREEN_HEIGHT = 512
+    const IP = "172.20.10.5", PORT = "5000";
+    function btn_fcn1(button){ //Streaming
+        button.classList.toggle('clicked');
+        var isClicked = button.classList.contains('clicked');
+        if (isClicked) {
+            frameInterval = setInterval(_UpdateSrc, 75);
+            imgImage.width = SCREEN_WIDTH;
+            imgImage.height = SCREEN_HEIGHT;
+        }
+        else{
+            clearInterval(frameInterval);
+        }
+    }
+    function btn_fcn2(button){ //Drawing
+        button.classList.toggle('clicked');
+        var isClicked = button.classList.contains('clicked');
+        if (isClicked) {
+            isDraw = true;
+        } 
+        else{
+            isDraw = false;
+        }
+    }
+    function btn_fcn3(button) { //Microphone
+        button.classList.toggle('clicked');
+        var isClicked = button.classList.contains('clicked');
+        if (isClicked) {
+            
+        } 
+        else{
 
+        }
+    }    
+    // EventListener
+    imgBox.addEventListener("mousemove", (event) => {
+        mouseX = event.clientX-imgBox.getBoundingClientRect().left;
+        mouseY = event.clientY-imgBox.getBoundingClientRect().top;
+        mouseX = (mouseX/imgBox.offsetWidth)*2-1;
+        mouseY = (mouseY/imgBox.offsetHeight)*2-1;
+    });
+    imgBox.addEventListener("mousedown", (event) => {
+        if(isDraw)
+            pointInterval = setInterval(PostPoint, 250);
+    });
+    imgBox.addEventListener("mouseup", (event) => {
+        if(isDraw)
+            clearInterval(pointInterval);
+    });
+    // Functional FCNS
+    function _UpdateSrc(){
+        imgImage.src = "/picture?" + new Date().getTime();
+    }
+    function PostPoint() {
+        xpos = mouseX.toFixed(2);
+        ypos = mouseY.toFixed(2);
+        color = "blue";
+        const formData = new FormData();
+        formData.append("Color", color);
+        formData.append("Xpos", xpos);
+        formData.append("Ypos", ypos);
+        const postData = {
+            method: 'POST',
+            body: formData,
+        };
+        _PostToServer(postData);
+    }
+    function _PostToServer(data){
+        const url = "http://"+IP+":"+PORT+"/ReceivePoint";
+        fetch(url, data).then(response => {
+            if(response.ok) {
+                return response.text();
+            }
+        })
+    }
+</script>
+</html>
