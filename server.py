@@ -50,14 +50,13 @@ async def ReceivedStrData(websocket, data):
             print("{0} is new Hololens Client now".format(Hololens_Client.remote_address))
             await Hololens_Client.send("Message:Update Successfully")
     elif command == "YoloDetect":
-        value = int(value)
         message = YoloDetect(value)
         await SendYoloPoints(message)
     else:
         await websocket.send("Message:Wrong Key Words")
 
 def ReceivedByteData(data):
-    saveJPG(data, "public/test.jpg")
+    saveJPG(data)
 
 async def SendYoloPoints(data):
     global Hololens_Client
@@ -79,16 +78,23 @@ async def main():
 def run_flask_app():
     app.run(host="0.0.0.0", port=5000)  # Change host and port as needed
 
-def saveJPG(data, filename):
-    with open(filename, "wb") as file:
-        file.write(data)
-        #print("File saved as {0}".format(filename))
+def saveJPG(data):
+    fileName = "public/test.jpg"
+    data_label = data[0]
+    data_value = data[1:]
+    if int(data_label) == 0: 
+        fileName = "public/virtual.jpg"
+    else:
+        fileName = "public/reality.jpg"
+        
+    with open(fileName, "wb") as file:
+        file.write(data_value)
 
-def YoloDetect(index):
-    #model = YOLO("best.pt")
-    model = YOLO("yolov8n.pt")
+def YoloDetect(target):
+    model = YOLO("best.pt")
+    #model = YOLO("yolov8n.pt")
     predicted = model.predict(
-        source="public/test.jpg",
+        source="public/virtual.jpg",
         save=False,
         device="cpu",
         verbose=False
@@ -101,7 +107,7 @@ def YoloDetect(index):
         for i in range(len(list_box.cls)): # for each predicted object
             key = int(list_box.cls[i])  # get the key of the object
             obj_name = dict_name[key] # get the name of the object
-            if obj_name == dict_name[index]:
+            if obj_name == target:
                 x_min = float(list_box.xyxy[i][0])/pre.orig_shape[1]*2-1
                 x_max = float(list_box.xyxy[i][2])/pre.orig_shape[1]*2-1
                 y_min = float(list_box.xyxy[i][1])/pre.orig_shape[0]*2-1
